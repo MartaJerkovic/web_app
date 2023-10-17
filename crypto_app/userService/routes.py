@@ -39,7 +39,7 @@ def token_required(f):
 @users.route('/signup', methods=['GET', 'POST'])
 def signup():
     if current_user.is_authenticated:
-        return redirect(url_for('reading.records'))
+        return redirect(url_for('reading.records', public_id=user.public_id))
     form = RegistrationForm()
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
@@ -48,11 +48,13 @@ def signup():
         db.session.commit()
         login_user(user)
         flash(f'Your account has been created!', 'success')
-        return redirect(url_for('reading.records'))
+        return redirect(url_for('reading.records', public_id=user.public_id))
     return render_template('signup.html', form=form)
 
 @users.route('/login', methods=['GET', 'POST'])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('reading.records', public_id=user.public_id))
     form = LoginForm()
     if form.validate_on_submit():
         email = form.email.data
@@ -67,7 +69,9 @@ def login():
             }
             token = jwt.encode(token_payload, current_app.config['SECRET_KEY'], algorithm='HS256')
 
-            return make_response(jsonify({'token': token}), 200)
+            #return make_response(jsonify({'token': token}), 200)
+            login_user(user)
+            return redirect(url_for('reading.records', public_id=user.public_id))
         else:
             return make_response(jsonify({'message': 'Invalid email or password'}), 401)
 
@@ -101,7 +105,7 @@ def get_one_user(public_id):
     user = User.query.filter_by(public_id=public_id).first()
     if not user:
         return jsonify({'message' : 'No user found!'})  
-    return jsonify({'id': user.id, 'username': user.username, 'public_id': user.public_id})
+    return jsonify({'id': user.id, 'first_name': user.first_name, 'public_id': user.public_id})
 
 
 @users.route('/user/<public_id>', methods=['DELETE'])
