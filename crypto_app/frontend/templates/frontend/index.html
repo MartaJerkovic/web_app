@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="{{ url_for('users.signup') }}" class="btn btn-secondary">Sign Up</a>
+            <a href="{{ url_for('users.login') }}" class="btn btn-primary">Login</a>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-12">
+            <p><a href="#">Forgot your password?</a></p>
+        </div>
+    </div>
+
+{% endblock content%}
+
+
+
