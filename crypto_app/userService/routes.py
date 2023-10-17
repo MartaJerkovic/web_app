@@ -39,7 +39,7 @@ def token_required(f):
 @users.route('/signup', methods=['GET', 'POST'])
 def signup():
     if current_user.is_authenticated:
-        return redirect(url_for('reading.records', public_id=user.public_id))
+        return redirect(url_for('reading.home', public_id=user.public_id))
     form = RegistrationForm()
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
@@ -48,13 +48,13 @@ def signup():
         db.session.commit()
         login_user(user)
         flash(f'Your account has been created!', 'success')
-        return redirect(url_for('reading.records', public_id=user.public_id))
+        return redirect(url_for('reading.home', public_id=user.public_id))
     return render_template('signup.html', form=form)
 
 @users.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('reading.records', public_id=user.public_id))
+        return redirect(url_for('reading.home', public_id=user.public_id))
     form = LoginForm()
     if form.validate_on_submit():
         email = form.email.data
@@ -71,7 +71,7 @@ def login():
 
             #return make_response(jsonify({'token': token}), 200)
             login_user(user)
-            return redirect(url_for('reading.records', public_id=user.public_id))
+            return redirect(url_for('reading.home', public_id=user.public_id))
         else:
             return make_response(jsonify({'message': 'Invalid email or password'}), 401)
 
