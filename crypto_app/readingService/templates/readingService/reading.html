@@ -60,6 +60,13 @@
             font-weight: bold;
         }
 
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
         .report {
             padding: 20px;
             background-color: #ffffff;
@@ -68,22 +75,32 @@
 
         .calculate-button {
             margin-bottom: 20px;
+            padding: 10px;
         }
 
-        table {
+        .data-container {
+            padding: 0px;
+            background-color: #ffffff;
+        }
+
+        .data-container table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
 
-        table, th, td {
-            border: 1px solid #dee2e6;
-        }
-
-        th, td {
-            padding: 10px;
+        .data-container th {
+            padding-top: 10px;
+            padding-bottom: 10px;
             text-align: left;
         }
+
+        .data-container td {
+            padding: 5px;
+            text-align: left;
+        }
+
+
     </style>
 </head>
 
@@ -93,46 +110,97 @@
             <div class="col-md-3">
                 <div class="menu">
                     <ul>
-                        <li class="menu-item"><a href="{{ url_for('reading.home', public_id = public_id) }}">Home</a></li>
-                        <li class="menu-item"><a href="{{ url_for('reading.watchlist', public_id = public_id) }}">Watchlist</a></li>
-                        <li class="menu-item"><a href="{{ url_for('reading.profile', public_id = public_id) }}">Profile</a></li>
+                        <li class="menu-item"><a href="{{ url_for('reading.csv') }}">Import CSV</a></li>
+                        <li class="menu-item"><a href="{{ url_for('reading.home') }}">Home</a></li>
+                        <li class="menu-item"><a href="{{ url_for('reading.watchlist') }}">Watchlist</a></li>
+                        <li class="menu-item"><a href="{{ url_for('reading.profile') }}">Profile</a></li>
                     </ul>
                 </div>
             </div>
-            {% if request.endpoint == 'reading.home' %}
+
+            {% if request.endpoint == 'reading.csv' %}
             <div class="col-md-9">
-                <div class="report">
-                    <button class="btn btn-primary calculate-button">Import CSV</button>
-                    <h2>Transaction Report</h2>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Description</th>
-                                <th>Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Data will be inserted here -->
-                        </tbody>
-                    </table>
+                <div class="report"> 
+                <form method="POST" action="{{ url_for('data_processing.import_csv') }}" enctype="multipart/form-data">
+                    <input type="file" name="csv-file" accept=".csv" required>
+                    <input type="submit" value="Import CSV" class="btn btn-primary">
+                </form>
+
                 </div>
             </div>
 
-            {% elif request.endpoint == 'reading.watchlist' %}
-            <div> <h1>Watchlist</h1></div>
 
-            {% elif request.endpoint == 'reading.profile' %}
-            <div> <h1>Profile</h1></div> 
+            {% elif request.endpoint == 'reading.home' %}
+            <div class="col-md-9">
+                <div class="report">
+                    <div class="header">
+                        <h2>Transaction Report</h2>
+                        <button class="btn btn-primary calculate-button">Calculate Tax</button>
+                    </div>
+                        <div class="data-container">
+                            <table id="data">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Transaction Type</th>
+                                        <th>Asset</th>
+                                        <th>Quantity</th>
+                                        <th>Currency</th>
+                                        <th>Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                
+                                    {% for row in data %}
+                                    <tr>
+                                        <td>{{ row.timestamp }}</td>
+                                        <td>{{ row.transaction_type }}</td>
+                                        <td>{{ row.asset }}</td>
+                                        <td>{{ row.quantity_transacted }}</td>
+                                        <td>{{ row.spot_price_currency }}</td>
+                                        <td>{{ row.spot_price_at_transaction }}</td>
+                                    </tr>
+                                    {% endfor %}                        
+                                </tbody>
+                            </table>
+
+                            {% block scripts %}
+                            <script>
+
+                                $(document).ready(function () {
+                                $('#data').DataTable({
+                                    columns: [
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null],
+                                });
+                                });
+                            </script>
+                            {% endblock %}
+                        </div>
+                    </div>
+
+                    {% elif request.endpoint == 'reading.watchlist' %}
+                    <div class="col-md-9">
+                        <div class="report">
+                            <h1>Watchlist</h1>
+                        </div>
+                    </div>
+
+                    {% elif request.endpoint == 'reading.profile' %}
+                    <div class="col-md-9">
+                        <div class="report">
+                            <h1>Profile</h1>
+                    </div>
+                </div>
+            </div>
 
             {% endif %}      
         </div>
     </div>
-
-    <!-- Bootstrap JS and dependencies -->
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 </body>
 
 {% endblock content%}

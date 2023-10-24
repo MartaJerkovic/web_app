@@ -1,9 +1,7 @@
 from flask import Flask, Blueprint, request, render_template, url_for, flash, redirect, jsonify, make_response, current_app
 from .forms import RegistrationForm, LoginForm
-#from userService.config import UserConfig
 from .models import User
 from .extensions import db, bcrypt
-from flask_login import login_user, current_user, logout_user
 import uuid
 import jwt
 from datetime import datetime, timedelta
@@ -15,13 +13,14 @@ users = Blueprint('users', __name__, template_folder='templates/userService')
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        token = request.headers.get('x-access-token')
+        token = request.cookies.get('token')
         if not token:
             return jsonify({'message': 'Token is missing!'}), 401
 
         try:
-            data = jwt.decode(token, current_app.config['SECRET_KEY'])
-            current_user = User.query.filter_by(email=data['email']).first()
+            data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+            print(data)
+            current_user = User.query.filter_by(public_id=data['public_id']).first()
             if not current_user:
                 raise Exception("User not found")
         except jwt.ExpiredSignatureError:
@@ -38,49 +37,52 @@ def token_required(f):
 
 @users.route('/signup', methods=['GET', 'POST'])
 def signup():
-    if current_user.is_authenticated:
-        return redirect(url_for('reading.home', public_id=user.public_id))
     form = RegistrationForm()
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
         user = User(public_id=str(uuid.uuid4()), first_name=form.first_name.data, last_name=form.last_name.data, email=form.email.data, password=hashed_password)
         db.session.add(user)
         db.session.commit()
-        login_user(user)
         flash(f'Your account has been created!', 'success')
-        return redirect(url_for('reading.home', public_id=user.public_id))
+        return redirect(url_for('users.login'))
     return render_template('signup.html', form=form)
 
 @users.route('/login', methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('reading.home', public_id=user.public_id))
     form = LoginForm()
     if form.validate_on_submit():
         email = form.email.data
         password = form.password.data
+        remember_me = form.remember.data
 
         user = User.query.filter_by(email=email).first()
 
         if user and bcrypt.check_password_hash(user.password, password):
+            expiration_time = timedelta(days=7) if remember_me else timedelta(minutes=30)
             token_payload = {
                 'public_id': user.public_id,
-                'exp': datetime.utcnow() + timedelta(minutes=30)
+                'exp': datetime.utcnow() + expiration_time
             }
             token = jwt.encode(token_payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+            
+            response = make_response(redirect(url_for('reading.home')))
+            response.set_cookie('token', token, expires=datetime.utcnow() + expiration_time, secure=True, httponly=True, samesite='Strict')
 
-            #return make_response(jsonify({'token': token}), 200)
-            login_user(user)
-            return redirect(url_for('reading.home', public_id=user.public_id))
+            token_cookie = request.cookies.get('token')
+            print("Token Cookie:", token_cookie)
+
+            return response
         else:
-            return make_response(jsonify({'message': 'Invalid email or password'}), 401)
+            flash('Login unsuccessful. Please check your email and password.', 'danger')
+            #return make_response(jsonify({'message': 'Invalid email or password', 401)
 
     #return jsonify({'message': 'Invalid input data'}), 400
     return render_template('login.html', form=form)
-        
 
 
 
+
+  
 
     if current_user.is_authenticated:
         return redirect(url_for('reading.records'))
@@ -122,12 +124,13 @@ def delete_user(public_id):
 
 
 
-
     
 
 
 
 @users.route('/logout')
 def logout():
-    logout_user()
-    return redirect(url_for('frontend.index'))
+    response = make_response(redirect(url_for('frontend.index')))
+    response.delete_cookie('token')
+
+    return response

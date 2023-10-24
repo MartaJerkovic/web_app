@@ -1,13 +1,8 @@
 from flask import Flask
-from .extensions import db, login_manager
-from flask_login import UserMixin
+from .extensions import db
 
 
-@login_manager.user_loader
-def load_user(users_id):
-    return User.query.get(int(users_id))
-
-class User(db.Model, UserMixin):
+class User(db.Model):
     __tablename__ = "Users"
     id = db.Column(db.Integer, primary_key=True)
     public_id = db.Column(db.String(50), unique=True)
