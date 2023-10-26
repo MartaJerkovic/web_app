@@ -13,7 +13,7 @@ app = Flask(__name__)
 db_users_folder = os.path.join(app.root_path, 'userService')
 db_transactions_folder = os.path.join(app.root_path, 'csvService')
 
-app.config['SECRET_KEY'] = 'DOINEEDTHISSECRETKEY?'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(db_users_folder, 'users.db')
 app.config['SQLALCHEMY_BINDS'] = {'transactions' : 'sqlite:///' + os.path.join(db_transactions_folder, 'transactions.db')}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -33,7 +33,7 @@ app.register_blueprint(data_processing)
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
 
 
  

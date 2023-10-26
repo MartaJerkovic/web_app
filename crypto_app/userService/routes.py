@@ -6,6 +6,7 @@ import uuid
 import jwt
 from datetime import datetime, timedelta
 from functools import wraps
+from frontend.producer import RabbitMQProducer
 
 
 users = Blueprint('users', __name__, template_folder='templates/userService')
@@ -65,6 +66,11 @@ def login():
             }
             token = jwt.encode(token_payload, current_app.config['SECRET_KEY'], algorithm='HS256')
             
+            # producer = RabbitMQProducer()
+            # routing_key = 'login'
+            # producer.publish_message(routing_key, f"User {email} logged in.")
+            # producer.close_connection()
+
             response = make_response(redirect(url_for('reading.home')))
             response.set_cookie('token', token, expires=datetime.utcnow() + expiration_time, secure=True, httponly=True, samesite='Strict')
 
@@ -118,14 +124,6 @@ def delete_user(public_id):
     db.session.delete(user)
     db.session.commit()
     return jsonify({'message' : 'Your account has been deleted!'})  
-
-
-
-
-
-
-    
-
 
 
 @users.route('/logout')
