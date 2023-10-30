@@ -16,11 +16,12 @@ def token_required(f):
     def decorated(*args, **kwargs):
         token = request.cookies.get('token')
         if not token:
-            return jsonify({'message': 'Token is missing!'}), 401
+            #return jsonify({'message': 'Token is missing!'}), 401
+            return redirect(url_for('users.login'))
 
         try:
             data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
-            print(data)
+            #print(data)
             current_user = User.query.filter_by(public_id=data['public_id']).first()
             if not current_user:
                 raise Exception("User not found")
@@ -83,23 +84,6 @@ def login():
             #return make_response(jsonify({'message': 'Invalid email or password', 401)
 
     #return jsonify({'message': 'Invalid input data'}), 400
-    return render_template('login.html', form=form)
-
-
-
-
-  
-
-    if current_user.is_authenticated:
-        return redirect(url_for('reading.records'))
-    form = LoginForm()
-    if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        if user and bcrypt.check_password_hash(user.password, form.password.data):
-            login_user(user, remember=form.remember.data)
-            return redirect(url_for('reading.records'))
-        else:
-            flash(f'Login unsuccessful. Please check your email and password.', 'danger')
     return render_template('login.html', form=form)
 
 @users.route('/users', methods=['GET'])

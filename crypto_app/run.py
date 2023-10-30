@@ -1,11 +1,13 @@
 import os
 from flask import Flask
+from config import SECRET_KEY
 from frontend.routes import frontend
 from userService.routes import users
 from readingService.routes import reading
 from csvService.routes import data_processing
 from userService.extensions import db as db_users
 #from csvService.extensions import db as db_transactions
+from taxService.routes import tax
 
 
 app = Flask(__name__)
@@ -13,7 +15,7 @@ app = Flask(__name__)
 db_users_folder = os.path.join(app.root_path, 'userService')
 db_transactions_folder = os.path.join(app.root_path, 'csvService')
 
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+app.config['SECRET_KEY'] = SECRET_KEY
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(db_users_folder, 'users.db')
 app.config['SQLALCHEMY_BINDS'] = {'transactions' : 'sqlite:///' + os.path.join(db_transactions_folder, 'transactions.db')}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -30,6 +32,7 @@ app.register_blueprint(frontend)
 app.register_blueprint(users)
 app.register_blueprint(reading)
 app.register_blueprint(data_processing)
+app.register_blueprint(tax)
 
 
 if __name__ == '__main__':

@@ -24,3 +24,11 @@ def watchlist(current_user):
 @token_required
 def profile(current_user):
     return render_template ('reading.html')
+
+@reading.route("/get_assets")
+@token_required
+def get_assets(current_user):
+    assets = Transaction.query.filter_by(public_id=current_user.public_id).group_by(Transaction.asset).distinct().all()
+    asset_list = [asset.asset for asset in assets]
+    #print(assets)
+    return jsonify(assets=asset_list)

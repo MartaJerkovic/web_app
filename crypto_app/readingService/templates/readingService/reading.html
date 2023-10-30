@@ -100,6 +100,10 @@
             text-align: left;
         }
 
+        .bold-label {
+            font-weight: bold;
+        }
+
 
     </style>
 </head>
@@ -146,7 +150,7 @@
                                         <th>Asset</th>
                                         <th>Quantity</th>
                                         <th>Currency</th>
-                                        <th>Price</th>
+                                        <th>Spot Price</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -163,44 +167,126 @@
                                     {% endfor %}                        
                                 </tbody>
                             </table>
-
-                            {% block scripts %}
-                            <script>
-
-                                $(document).ready(function () {
-                                $('#data').DataTable({
-                                    columns: [
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null],
-                                });
-                                });
-                            </script>
-                            {% endblock %}
                         </div>
-                    </div>
 
-                    {% elif request.endpoint == 'reading.watchlist' %}
-                    <div class="col-md-9">
-                        <div class="report">
-                            <h1>Watchlist</h1>
+                        <div class="container mt-3 form-container" style="display: none;">
+                            <h2 style="margin-bottom: 40px;">Selling Details</h2>
+                            <form>
+                                <div class="form-group">
+                                    <label for="sellingTime" class="bold-label">Sale Date and Time:</label>
+                                    <input type="datetime-local" class="form-control" id="sellingTime" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="soldAsset" class="bold-label">Asset:</label>
+                                    <select class="form-control" id="soldAsset" required>
+                                        <option value="">Select Asset</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="soldQuantity" class="bold-label">Quantity:</label>
+                                    <input type="number" class="form-control" id="soldQuantity" step=".0000000001" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="spotPrice" class="bold-label">Spot Price:</label>
+                                    <input type="number" class="form-control" id="spotPrice" step=".0000000001" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary" onclick="submitForm()">Submit</button>
+                            </form>
                         </div>
-                    </div>
-
-                    {% elif request.endpoint == 'reading.profile' %}
-                    <div class="col-md-9">
-                        <div class="report">
-                            <h1>Profile</h1>
                     </div>
                 </div>
             </div>
+                        
+            {% block scripts %}
+            <script>
 
-            {% endif %}      
+                $(document).ready(function () {
+                    $('#data').DataTable({
+                        columns: [
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null],
+                    });
+                    });
+
+                $('.calculate-button').click(function() {
+                    $('.data-container').hide();
+                    $('.header').hide();
+                    $('.form-container').show();
+                });
+
+                $.get('/get_assets', function(data) {
+                    var assets = data.assets;
+
+                    var soldAssetDropdown = $('#soldAsset');
+                    soldAssetDropdown.empty();
+                    soldAssetDropdown.append('<option value="">Select Asset</option>'); 
+
+                    assets.forEach(function (asset) {
+                        soldAssetDropdown.append('<option value="' + asset + '">' + asset + '</option>');
+                    });
+                });
+
+                // $('form').submit(function(event) {
+                //     event.preventDefault();
+                //     // Handle form submission logic here
+                // });
+
+                function submitForm() {
+                    var sellingTime = document.getElementById('sellingTime').value;
+                    var soldAsset = document.getElementById('soldAsset').value;
+                    var soldQuantity = parseFloat(document.getElementById('soldQuantity').value);
+                    var spotPrice = parseFloat(document.getElementById('spotPrice').value);
+
+    
+                    var formData = {
+                        sellingTime: sellingTime,
+                        soldAsset: soldAsset,
+                        soldQuantity: soldQuantity,
+                        spotPrice: spotPrice
+                    };
+
+                    $.ajax({
+                        type: 'POST',
+                        url: '/calculate_tax',  
+                        contentType: 'application/json;charset=UTF-8',
+                        data: JSON.stringify(formData),
+                        success: function(response) {
+
+                        },
+                        error: function(error) {
+                            console.log('Error:', error);
+                        }
+                    });
+                }
+
+
+
+
+            </script>
+            {% endblock %}
         </div>
     </div>
+
+            {% elif request.endpoint == 'reading.watchlist' %}
+            <div class="col-md-9">
+                <div class="report">
+                    <h1>Watchlist</h1>
+                </div>
+            </div>
+
+            {% elif request.endpoint == 'reading.profile' %}
+            <div class="col-md-9">
+                <div class="report">
+                    <h1>Profile</h1>
+            </div>
+        </div>
+    </div>
+
+    {% endif %}      
 </body>
 
 {% endblock content%}
